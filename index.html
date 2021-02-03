@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+
+    <title>Tesseract Paste</title>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="h1 text-center">Use Ctrl+V to paste image and OCR</h1>
+      <div class="text-center" id="loadingDiv">
+        <p class="h3">Loading... (Takes 15-20s)</p>
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-lg">
+          <div class="text-center">
+            <p class="h3">Pasted Image</p>
+            <img src="" id="pastedImage">
+          </div>
+        </div>
+        <div class="col-lg">
+          <div class="text-center">
+            <div class="row">
+              <div class="col">
+                <span class="h3">OCR Output</span>
+              </div>
+              <div hidden id="ocrSpinnerDiv" class="p-10 col">
+                <span id="ocrSpinnerText"></span>
+                <div class="spinner-border spinner-border-sm" role="status"></div>
+              </div>
+            </div>
+
+            <textarea rows="20" class='w-100' id="output"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW" crossorigin="anonymous"></script>
+    <script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>
+    <script defer>
+      const queryOpts = { name: 'clipboard-read', allowWithoutGesture: false };
+      const queryPermissions = async () => {
+        const permissionStatus = await navigator.permissions.query(queryOpts);
+        // Will be 'granted', 'denied' or 'prompt':
+        console.log(permissionStatus.state);
+  
+        // Listen for changes to the permission state
+        permissionStatus.onchange = () => {
+          console.log(permissionStatus.state);
+        };
+      }
+      queryPermissions()
+
+      const loadingDiv = document.getElementById("loadingDiv")
+      const pastedImg = document.getElementById("pastedImage")
+      const outputArea = document.getElementById("output")
+      const ocrSpinnerDiv = document.getElementById("ocrSpinnerDiv")
+      const ocrSpinnerText = document.getElementById("ocrSpinnerText")
+      
+      const worker = Tesseract.createWorker({
+        logger: m => console.log(m)
+      })
+
+      const initWorker = async () => {
+        loadingDiv.hidden = false
+        await worker.load()
+        await worker.loadLanguage('eng');
+        await worker.initialize('eng'); 
+        loadingDiv.hidden = true
+      }
+
+      initWorker()
+
+      const recognize = async (imgBlob) => {
+        return await worker.recognize(imgBlob)
+      }
+
+      document.addEventListener('paste', async (e) => {
+        e.preventDefault();
+        const items = await navigator.clipboard.read();
+
+        const imgClipboardItem = items[0] 
+        const imgClipboardItemType = imgClipboardItem.types[0]
+        
+        const imgBlob = await imgClipboardItem.getType(imgClipboardItemType)
+        const imgUrl = URL.createObjectURL(imgBlob)
+        pastedImg.src = imgUrl
+
+        ocrSpinnerDiv.hidden = false
+        ocrSpinnerText.innerText = "Recognizing Text"
+        
+        try {
+          const result = await recognize(imgBlob)
+          output.value = result.data.text
+        } catch(err) {
+          output.value = "invalid input"
+        }
+        ocrSpinnerDiv.hidden = true
+        ocrSpinnerText.innerText = ""
+      });
+
+    </script>
+  </body>
+</html>
