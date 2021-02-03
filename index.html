@@ -71,7 +71,12 @@
       const ocrSpinnerText = document.getElementById("ocrSpinnerText")
       
       const worker = Tesseract.createWorker({
-        logger: m => console.log(m)
+        logger: m => {
+          console.log(m)
+          if (m.status === "recognizing text") {
+            ocrSpinnerText.innerHTML = `Progress: <strong>${(m.progress*100).toFixed(2)}%</strong>`
+          }
+        }
       })
 
       const initWorker = async () => {
@@ -100,7 +105,6 @@
         pastedImg.src = imgUrl
 
         ocrSpinnerDiv.hidden = false
-        ocrSpinnerText.innerText = "Recognizing Text"
         
         try {
           const result = await recognize(imgBlob)
@@ -109,7 +113,6 @@
           output.value = "invalid input"
         }
         ocrSpinnerDiv.hidden = true
-        ocrSpinnerText.innerText = ""
       });
 
     </script>
