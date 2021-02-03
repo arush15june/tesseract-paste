@@ -1,6 +1,6 @@
 # tesseract-paste
 
-Live at: [arush15june.github.io/tesseract-paste](https://arush15june.github.io/tesseract-paste)
+Live at: [arush15june.github.io/tesseract-paste](https://arush15june.github.io/tesseract-paste/)
 
 ## Usage
 
